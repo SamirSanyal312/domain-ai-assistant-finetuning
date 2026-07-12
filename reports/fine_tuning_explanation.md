@@ -38,6 +38,50 @@ SFT teaches the model what answer to imitate. DPO teaches the model which of two
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Non-instruction QLoRA | 16 | 32 | 0.0 | 2e-4 | 2 | 4 | 3 |
 | Instruction SFT | continues same adapter | continues same adapter | 0.0 | 1e-4 | 2 | 4 | 4 |
-| DPO | continues SFT adapter | continues SFT adapter | 0.0 | 1e-5 | 1 | 8 | 2 |
+| DPO | continues SFT adapter | continues SFT adapter | 0.0 | 5e-6 | 1 | 8 | 2 |
 
 The target modules are `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, and `down_proj`. Maximum sequence length is 1,024 tokens. DPO beta is 0.1. These values are intentionally conservative for a small dataset and a limited Colab GPU; training curves and validation outputs should be checked for overfitting.
+
+## Measured training results
+
+### Non-instruction fine-tuning
+
+| Epoch | Training loss | Validation loss |
+|---:|---:|---:|
+| 1 | 4.2282 | 4.3969 |
+| 2 | 4.2283 | 4.0923 |
+| 3 | 3.9348 | 3.9551 |
+
+### Supervised fine-tuning
+
+| Epoch | Training loss | Validation loss |
+|---:|---:|---:|
+| 1 | 2.6651 | 2.4403 |
+| 2 | 1.7636 | 1.9472 |
+| 3 | 1.3246 | 1.7089 |
+| 4 | 1.1482 | 1.6681 |
+
+The SFT stage completed 60 optimizer steps and reported an average training loss of approximately 1.8923.
+
+### DPO alignment
+
+| Epoch | Chosen reward | Rejected reward | Reward accuracy | Reward margin |
+|---:|---:|---:|---:|---:|
+| 1 | 15.8113 | -3.4884 | 1.0000 | 19.2997 |
+| 2 | 15.8253 | -3.6390 | 1.0000 | 19.4643 |
+
+The final DPO training loss was approximately `4.8154e-7`.
+
+## Interpretation and lessons learned
+
+The training pipeline completed successfully, but human evaluation showed that the DPO model did not consistently improve answer quality. A reward accuracy of 1.0 means that the chosen responses scored above the rejected responses for the supplied validation pairs; it does not mean that every generated answer is correct.
+
+The main limitation was dataset quality. Several instruction prompts reused the same target response, causing the small model to memorize topic templates. Many DPO rejected answers were obviously weaker than the chosen answers, making preference separation too easy. Future datasets should contain unique question-specific responses, realistic rejected answers generated from actual SFT failures, and additional examples for identity, access control, incident priority, MFA recovery, refusal, and out-of-domain behavior.
+
+## External references used for the safety review
+
+- CISA, “Recognize and Report Phishing”: https://www.cisa.gov/secure-our-world/recognize-and-report-phishing
+- CISA, “Avoiding Social Engineering and Phishing Attacks”: https://www.cisa.gov/news-events/news/avoiding-social-engineering-and-phishing-attacks
+- Microsoft Entra, “Configure multifactor authentication settings — Report suspicious activity”: https://learn.microsoft.com/en-us/entra/identity/authentication/howto-mfa-mfasettings
+- NIST CSRC, “Least Privilege”: https://csrc.nist.gov/glossary/term/least_privilege
+
