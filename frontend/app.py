@@ -51,17 +51,249 @@ DESCRIPTIONS = {
 }
 
 CSS = """
-.gradio-container {max-width: 1450px !important; margin: auto !important;
-background: radial-gradient(circle at 10% 0%, rgba(70,120,255,.15), transparent 30%), #09111f !important;}
-#hero {padding: 22px 26px; border: 1px solid rgba(115,165,255,.25); border-radius: 20px;
-background: linear-gradient(135deg, rgba(20,39,67,.97), rgba(10,20,37,.95)); margin-bottom: 12px;}
-#hero h1 {margin: 0 0 6px; color: #eef5ff; font-size: 31px;}
-#hero p {margin: 0; color: #a8b8cf;}
-.nd-card {border: 1px solid rgba(115,165,255,.20) !important; border-radius: 18px !important;
-background: rgba(15,28,48,.88) !important; box-shadow: 0 12px 34px rgba(0,0,0,.18);}
-#mode-status {padding: 10px 14px; border-radius: 13px; border: 1px solid rgba(115,165,255,.20);}
-#chatbot {min-height: 610px; border-radius: 18px;}
-#send {background: linear-gradient(135deg, #5d8cff, #785cff); color: white; font-weight: 700;}
+:root,
+.gradio-container {
+    --body-background-fill: #f4f7fb;
+    --body-text-color: #172033;
+    --body-text-color-subdued: #65738a;
+
+    --block-background-fill: #ffffff;
+    --block-border-color: #dbe4f0;
+    --block-label-background-fill: #eef4ff;
+    --block-label-text-color: #2457d6;
+    --block-title-text-color: #172033;
+
+    --input-background-fill: #ffffff;
+    --input-border-color: #cbd7e6;
+    --input-border-color-focus: #4f7cff;
+    --input-placeholder-color: #91a0b5;
+
+    --button-primary-background-fill: #356df3;
+    --button-primary-background-fill-hover: #2457d6;
+    --button-primary-text-color: #ffffff;
+
+    --button-secondary-background-fill: #ffffff;
+    --button-secondary-background-fill-hover: #f3f6fb;
+    --button-secondary-border-color: #cbd7e6;
+    --button-secondary-text-color: #172033;
+
+    --checkbox-background-color-selected: #356df3;
+    --checkbox-border-color-selected: #356df3;
+}
+
+html,
+body,
+.gradio-container {
+    background: #f4f7fb !important;
+    color: #172033 !important;
+}
+
+.gradio-container {
+    max-width: 1480px !important;
+    margin: 0 auto !important;
+    padding: 24px 28px 36px !important;
+}
+
+/* Header */
+#hero {
+    padding: 25px 29px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(85, 132, 218, 0.34);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 88% 15%, rgba(104, 126, 255, 0.28), transparent 26%),
+        linear-gradient(135deg, #10284a 0%, #173b68 58%, #253b78 100%);
+    box-shadow: 0 16px 42px rgba(26, 52, 92, 0.18);
+}
+
+#hero h1 {
+    margin: 0 0 7px;
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: 760;
+    letter-spacing: -0.02em;
+}
+
+#hero p {
+    margin: 0;
+    color: #d8e5ff;
+    font-size: 15px;
+}
+
+/* Main panels */
+.nd-card {
+    border: 1px solid #dbe4f0 !important;
+    border-radius: 20px !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 34px rgba(42, 64, 99, 0.10);
+}
+
+.nd-card,
+.nd-card p,
+.nd-card span,
+.nd-card label,
+.nd-card h1,
+.nd-card h2,
+.nd-card h3,
+.nd-card h4,
+.nd-card .prose {
+    color: #172033;
+}
+
+.nd-card .info,
+.nd-card .secondary-wrap,
+.nd-card small {
+    color: #65738a !important;
+}
+
+/* Left controls */
+#controls-panel {
+    padding: 18px !important;
+}
+
+#controls-panel h2 {
+    color: #172033 !important;
+    margin-bottom: 12px;
+}
+
+#controls-panel fieldset {
+    background: #f8faff !important;
+    border: 1px solid #dce6f4 !important;
+    border-radius: 15px !important;
+}
+
+#mode-status {
+    padding: 14px 15px;
+    margin-top: 12px;
+    border: 1px solid #d8e4f5;
+    border-left: 4px solid #356df3;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f6f9ff, #eef4ff) !important;
+    color: #172033 !important;
+}
+
+#mode-status * {
+    color: #172033 !important;
+}
+
+#mode-status code {
+    display: block;
+    margin-top: 5px;
+    padding: 7px 9px;
+    overflow-wrap: anywhere;
+    border: 1px solid #d7e1ef;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #33445f !important;
+    font-size: 11px;
+}
+
+/* Accordions and controls */
+.gradio-container .accordion {
+    border: 1px solid #dbe4f0 !important;
+    border-radius: 13px !important;
+    background: #ffffff !important;
+}
+
+.gradio-container input,
+.gradio-container textarea {
+    color: #172033 !important;
+}
+
+.gradio-container input::placeholder,
+.gradio-container textarea::placeholder {
+    color: #91a0b5 !important;
+}
+
+/* Chat surface */
+#conversation-panel {
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+#chatbot {
+    min-height: 610px;
+    border: 1px solid #dbe4f0 !important;
+    border-radius: 18px !important;
+    background:
+        linear-gradient(rgba(248, 250, 253, 0.96), rgba(248, 250, 253, 0.96)),
+        radial-gradient(circle at 50% 0%, #eaf1ff, transparent 48%) !important;
+}
+
+#chatbot .message {
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px rgba(43, 63, 96, 0.07);
+}
+
+#chatbot .message.user {
+    background: #356df3 !important;
+    color: #ffffff !important;
+}
+
+#chatbot .message.bot,
+#chatbot .message.assistant {
+    border: 1px solid #dbe4f0 !important;
+    background: #ffffff !important;
+    color: #172033 !important;
+}
+
+/* Composer */
+#message-box {
+    border: 1px solid #dbe4f0 !important;
+    border-radius: 15px !important;
+    background: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(45, 66, 101, 0.08);
+}
+
+#send {
+    min-height: 48px;
+    border: 0 !important;
+    border-radius: 13px !important;
+    background: linear-gradient(135deg, #356df3, #6c56ef) !important;
+    color: #ffffff !important;
+    font-weight: 720;
+    box-shadow: 0 7px 18px rgba(72, 89, 220, 0.25);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+#send:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(72, 89, 220, 0.32);
+}
+
+/* Example prompt buttons */
+.gradio-container button {
+    border-radius: 11px;
+}
+
+.gradio-container button:not(.primary) {
+    color: #26364f;
+}
+
+/* Footer */
+footer,
+footer a {
+    color: #718096 !important;
+}
+
+/* Responsive layout */
+@media (max-width: 900px) {
+    .gradio-container {
+        padding: 14px !important;
+    }
+
+    #hero {
+        padding: 21px;
+    }
+
+    #hero h1 {
+        font-size: 27px;
+    }
+
+    #chatbot {
+        min-height: 500px;
+    }
+}
 """
 
 
@@ -211,7 +443,7 @@ def build_ui(manager: ModelManager) -> gr.Blocks:
             '<p>Compare Base, SFT, and DPO behavior from one local dashboard.</p></section>'
         )
         with gr.Row(equal_height=False):
-            with gr.Column(scale=1, min_width=310, elem_classes="nd-card"):
+            with gr.Column(scale=1, min_width=310, elem_id="controls-panel", elem_classes="nd-card"):
                 gr.Markdown("## Model controls")
                 mode = gr.Radio(list(MODES), value="DPO Model", label="Inference mode",
                                 info="Changing modes clears chat for a fair comparison.")
@@ -226,15 +458,26 @@ def build_ui(manager: ModelManager) -> gr.Blocks:
                 clear = gr.Button("Clear conversation")
                 gr.Markdown("**Fair comparison:** use temperature `0` and ask the same prompt in every mode.")
 
-            with gr.Column(scale=3, elem_classes="nd-card"):
+            with gr.Column(scale=3, elem_id="conversation-panel", elem_classes="nd-card"):
                 chatbot = gr.Chatbot(
-                    value=[{"role": "assistant", "content": "Select a mode and ask an IT helpdesk question."}],
-                    elem_id="chatbot", height=620, show_copy_button=True, label="Conversation"
-                )
+    value=[
+        {
+            "role": "assistant",
+            "content": (
+                "Select a model mode and ask an IT helpdesk question. "
+                "The model loads once; only the active adapter changes."
+            ),
+        }
+    ],
+    elem_id="chatbot",
+    label="NovaDesk conversation",
+    height=620,
+    buttons=["copy"],
+)
                 with gr.Row():
                     message = gr.Textbox(
                         placeholder="Ask about VPN, MFA, phishing, devices, access...",
-                        show_label=False, lines=2, scale=8, autofocus=True
+                        show_label=False, lines=2, scale=8, autofocus=True, elem_id="message-box"
                     )
                     send = gr.Button("Send", variant="primary", scale=1, elem_id="send")
                 gr.Examples(
