@@ -1,58 +1,133 @@
-# NovaDesk IT Helpdesk Assistant — Three-Stage Fine-Tuning with Unsloth
+# NovaDesk IT Helpdesk Assistant
 
-A GitHub-ready implementation of a domain-specific IT helpdesk assistant trained in three stages:
+A domain-specific IT helpdesk assistant fine-tuned with **Unsloth**, **QLoRA**, **Supervised Fine-Tuning (SFT)**, and **Direct Preference Optimization (DPO)**.
 
-1. Non-instruction domain adaptation on raw IT policy text
-2. Supervised instruction fine-tuning (SFT)
-3. Direct Preference Optimization (DPO)
+This project implements the complete three-stage workflow required by the assignment:
 
-> **Important:** The repository includes complete datasets, executable Colab notebooks, evaluation automation, and inference code. The committed Markdown evaluation files are templates until the GPU notebooks are run. Do not present placeholder text as measured results.
+```text
+Qwen2.5-1.5B-Instruct
+        ↓
+Stage 1: Non-instruction domain adaptation
+        ↓
+Stage 2: Instruction fine-tuning (SFT)
+        ↓
+Stage 3: Preference alignment (DPO)
+        ↓
+NovaDesk IT Helpdesk Assistant
+```
+
+## Project status
+
+| Component | Status |
+|---|---|
+| Raw-domain dataset | Completed |
+| Non-instruction fine-tuning | Completed |
+| Instruction dataset | Completed |
+| Instruction fine-tuning | Completed |
+| Preference dataset | Completed |
+| DPO alignment | Completed |
+| Base/SFT/DPO inference outputs | Completed |
+| Interactive inference script | Completed |
+| Human evaluation reports | Generated; judgment columns require final manual review |
+
+> **Important result:** All three training stages executed successfully, but manual testing showed mixed final response quality. The project demonstrates that successful training, low loss, and high DPO reward accuracy do not automatically guarantee a reliable assistant when the dataset is small or repetitive.
+
+---
 
 ## Domain and business problem
 
-The fictional company **NovaDesk** needs an internal assistant that gives consistent first-line IT support. The assistant should:
+The selected domain is **IT Helpdesk Support**.
+
+The fictional company **NovaDesk** needs an internal assistant that can:
 
 - troubleshoot account, VPN, network, email, device, printer, and software issues;
-- collect useful diagnostics without asking for secrets;
-- follow least privilege and sensitive-data rules;
-- recognize phishing, malware, lost devices, and widespread outages;
-- explain when to stop self-service troubleshooting and escalate.
+- collect useful ticket information without requesting passwords or MFA codes;
+- provide safe first-line support;
+- recognize phishing, malware, lost-device, and outage scenarios;
+- follow least-privilege and approved-software practices;
+- identify when the user must stop troubleshooting and escalate to the Service Desk or Security Operations.
 
-IT helpdesk was selected instead of healthcare because a helpdesk assistant has lower safety risk, can be evaluated against a clear fictional policy, and has a relevant public ticket dataset for taxonomy and augmentation.
+IT helpdesk was selected because it has clear operational procedures, measurable support scenarios, and relevant public ticket datasets.
+
+---
+
+## Model
+
+The project uses:
+
+```text
+unsloth/Qwen2.5-1.5B-Instruct-bnb-4bit
+```
+
+The underlying Qwen2.5 model is an instruction-tuned causal language model with approximately **1.54 billion parameters**. The 4-bit Unsloth checkpoint makes adapter training practical on a Google Colab Tesla T4 GPU.
+
+### Why this model was selected
+
+- small enough for limited Colab VRAM;
+- supports conversational prompts and chat templates;
+- suitable for LoRA/QLoRA fine-tuning;
+- capable of baseline instruction following;
+- recommended model size for the assignment.
+
+---
 
 ## Dataset details
 
-| File | Count | Purpose |
+| File | Size | Purpose |
 |---|---:|---|
-| `data/non_instruction_data.txt` | 66 paragraphs | Domain language and policy adaptation |
-| `data/instruction_dataset.jsonl` | 132 pairs | User-question → policy answer SFT |
-| `data/preference_dataset.jsonl` | 66 triples | Chosen vs rejected DPO alignment |
+| `data/non_instruction_data.txt` | 66 paragraphs | Domain terminology and policy adaptation |
+| `data/instruction_dataset.jsonl` | 132 examples | Question-to-answer supervised fine-tuning |
+| `data/preference_dataset.jsonl` | 66 examples | Chosen-versus-rejected DPO alignment |
 | `data/evaluation_questions.json` | 10 questions | Fixed before/after evaluation |
-| `data/public_ticket_sample.jsonl` | 50 rows | Optional exploratory public sample |
+| `data/public_ticket_sample.jsonl` | 50 rows | Optional public-data exploration |
 
-The primary training data is synthetic but is grounded in one consistent fictional knowledge base. Run `python scripts/validate_data.py` to verify minimum counts, schema, duplicates, and basic safety checks.
+The project exceeds the assignment minimums of:
 
-### Public dataset reference
+- 50 raw-domain paragraphs;
+- 100 instruction-response examples;
+- 50 preference examples;
+- 10 evaluation questions.
 
-The optional augmentation source is `Tobi-Bueck/customer-support-tickets` on Hugging Face. Its dataset card lists English and German support tickets, 61.8K rows, and a CC BY-NC 4.0 license. See `data/DATASET_CARD.md` before reuse. The required training notebooks do not depend on this public sample.
+### Dataset strategy
 
-## Base model
+The primary datasets use a fictional but consistent NovaDesk policy. This avoids exposing real company information and provides a controlled source of truth for evaluation.
 
-`unsloth/Qwen2.5-1.5B-Instruct-bnb-4bit`
+An optional sample derived from the public `Tobi-Bueck/customer-support-tickets` dataset is included for taxonomy exploration and future augmentation. The required training notebooks do not depend on this optional sample. Review `data/DATASET_CARD.md` before reusing public data.
 
-The underlying Qwen2.5 1.5B Instruct model is small enough for a Colab GPU and includes a chat template, making the same unmodified checkpoint usable for the baseline evaluation and all three training stages. The Unsloth checkpoint is pre-quantized for memory-efficient 4-bit loading.
+### Validate the data
+
+```bash
+python scripts/validate_data.py
+```
+
+Expected counts:
+
+```text
+raw_paragraphs: 66
+instruction_examples: 132
+preference_examples: 66
+evaluation_questions: 10
+```
+
+---
 
 ## Repository structure
 
 ```text
 domain-ai-assistant-finetuning/
+├── artifacts/
+│   ├── base_outputs.json
+│   ├── non_instruction_outputs.json
+│   ├── sft_outputs.json
+│   ├── dpo_outputs.json
+│   └── *_train_metrics.json
 ├── data/
 │   ├── non_instruction_data.txt
 │   ├── instruction_dataset.jsonl
 │   ├── preference_dataset.jsonl
 │   ├── evaluation_questions.json
 │   ├── public_ticket_sample.jsonl
-│   ├── DATASET_CARD.md
+│   └── DATASET_CARD.md
 ├── notebooks/
 │   ├── non_instruction_finetuning.ipynb
 │   ├── instruction_finetuning.ipynb
@@ -68,147 +143,510 @@ domain-ai-assistant-finetuning/
 ├── src/
 │   ├── common.py
 │   └── inference.py
+├── .gitignore
+├── LICENSE
 ├── requirements.txt
 └── README.md
 ```
 
-## Training workflow
+The large `outputs/` directory, model checkpoints, tokenizer caches, and compiled Unsloth caches are intentionally excluded from GitHub.
 
-### 1. Validate the repository data
+---
 
-```bash
-python scripts/validate_data.py
-```
+# Training workflow
 
-Expected counts:
+## Stage 1: Non-instruction fine-tuning
 
-```text
-raw_paragraphs: 66
-instruction_examples: 132
-preference_examples: 66
-```
+The first stage performs continued language-model training on raw NovaDesk policy text.
 
-### 2. Create a GitHub repository
+### Goal
 
-```bash
-git init
-git add .
-git commit -m "Initial NovaDesk fine-tuning project"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/domain-ai-assistant-finetuning.git
-git push -u origin main
-```
+Teach the model:
 
-### 3. Run notebooks in Google Colab
+- IT-helpdesk terminology;
+- NovaDesk escalation language;
+- common ticket details;
+- password and MFA safety rules;
+- lost-device and phishing terminology;
+- approved support practices.
 
-Use a GPU runtime and run in this order:
+This stage uses next-token prediction rather than question-answer examples.
 
-1. `notebooks/non_instruction_finetuning.ipynb`
-2. `notebooks/instruction_finetuning.ipynb`
-3. `notebooks/dpo_alignment.ipynb`
-
-Clone the repository in Colab before opening/running a notebook:
-
-```python
-!git clone https://github.com/YOUR_USERNAME/domain-ai-assistant-finetuning.git
-%cd domain-ai-assistant-finetuning
-```
-
-Each notebook saves the next-stage adapter under `outputs/`. The Stage 1 notebook saves base answers; the SFT and DPO notebooks automatically generate comparison reports from actual model outputs.
-
-### 4. Preserve results
-
-Colab storage is temporary. Download these folders after each run or copy them to Google Drive:
-
-- `outputs/non_instruction_adapter`
-- `outputs/sft_adapter`
-- `outputs/dpo_adapter`
-- `artifacts/*.json`
-- updated `reports/*.md`
-
-Commit the updated reports and selected training screenshots/logs. Avoid committing large checkpoints unless Git LFS is configured; LoRA adapters are smaller but can still be large.
-
-## LoRA / QLoRA configuration
+### Configuration
 
 | Parameter | Value |
-|---|---|
-| 4-bit base model | enabled |
+|---|---:|
+| Quantization | 4-bit |
 | LoRA rank | 16 |
 | LoRA alpha | 32 |
 | LoRA dropout | 0.0 |
-| Target modules | q/k/v/o projections and gate/up/down MLP projections |
-| Gradient checkpointing | Unsloth |
+| Micro-batch size | 2 |
+| Gradient accumulation | 4 |
+| Effective batch size | 8 |
+| Epochs | 3 |
+| Learning rate | `2e-4` |
 | Maximum sequence length | 1,024 |
-| Stage 1 learning rate | 2e-4 |
-| SFT learning rate | 1e-4 |
-| DPO learning rate | 1e-5 |
-| DPO beta | 0.1 |
 
-## Inference
+Target modules:
 
-After the DPO adapter exists:
-
-```bash
-python src/inference.py "I clicked a phishing link and entered my password. What should I do?"
+```text
+q_proj, k_proj, v_proj, o_proj,
+gate_proj, up_proj, down_proj
 ```
 
-Interactive mode:
+### Measured Stage 1 results
+
+| Epoch | Training loss | Validation loss |
+|---:|---:|---:|
+| 1 | 4.2282 | 4.3969 |
+| 2 | 4.2283 | 4.0923 |
+| 3 | 3.9348 | 3.9551 |
+
+The adapter was saved under:
+
+```text
+outputs/non_instruction_adapter/
+```
+
+### Observation
+
+The model showed greater familiarity with IT terminology after this stage, but its answers remained generic. This was expected because raw-text adaptation does not strongly teach question-answer behavior.
+
+---
+
+## Stage 2: Supervised instruction fine-tuning
+
+The second stage continues from the Stage 1 adapter and trains on 132 question-answer examples.
+
+### Goal
+
+Teach the model how to convert an employee’s IT problem into a concise, safe, domain-specific response.
+
+### Dataset split
+
+| Split | Examples |
+|---|---:|
+| Training | 118 |
+| Validation | 14 |
+
+### Configuration
+
+| Parameter | Value |
+|---|---:|
+| Trainable parameters | 18,464,768 |
+| Total parameters | 1,562,179,072 |
+| Trainable percentage | 1.182% |
+| Micro-batch size | 2 |
+| Gradient accumulation | 4 |
+| Effective batch size | 8 |
+| Epochs | 4 |
+| Optimizer steps | 60 |
+| Learning rate | `1e-4` |
+| Completion-only loss | Enabled |
+
+### Measured SFT results
+
+| Epoch | Training loss | Validation loss |
+|---:|---:|---:|
+| 1 | 2.6651 | 2.4403 |
+| 2 | 1.7636 | 1.9472 |
+| 3 | 1.3246 | 1.7089 |
+| 4 | 1.1482 | 1.6681 |
+
+Average training loss:
+
+```text
+1.8923
+```
+
+The adapter was saved under:
+
+```text
+outputs/sft_adapter/
+```
+
+### Observation
+
+SFT produced stronger company-oriented answers for some scenarios, including:
+
+- stolen-company-device reporting;
+- individual VPN ticket details;
+- approved software requests;
+- password and unexpected MFA prompt refusal.
+
+However, some responses were mapped to the wrong support topic. Examples included a shared-drive access question receiving malware advice and an MFA-recovery question receiving stolen-device guidance.
+
+---
+
+## Stage 3: Direct Preference Optimization
+
+DPO trains the SFT model using preference triples:
+
+```json
+{
+  "prompt": "User question",
+  "chosen": "Preferred safe and helpful response",
+  "rejected": "Weaker, unsafe, incomplete, or generic response"
+}
+```
+
+DPO directly increases the relative preference for the chosen completion over the rejected completion compared with a reference policy. It does not require a separately trained reward model.
+
+### Dataset split
+
+| Split | Examples |
+|---|---:|
+| Training | 59 |
+| Validation | 7 |
+
+### Configuration
+
+| Parameter | Value |
+|---|---:|
+| Beta | 0.1 |
+| Loss type | Sigmoid |
+| Micro-batch size | 1 |
+| Gradient accumulation | 8 |
+| Effective batch size | 8 |
+| Epochs | 2 |
+| Optimizer steps | 16 |
+| Learning rate | `5e-6` |
+| Padding side | Left |
+
+### Measured DPO results
+
+| Epoch | DPO loss | Chosen reward | Rejected reward | Reward accuracy | Reward margin |
+|---:|---:|---:|---:|---:|---:|
+| 1 | ~0.000000 | 15.8113 | -3.4884 | 1.0000 | 19.2997 |
+| 2 | ~0.000001 | 15.8253 | -3.6390 | 1.0000 | 19.4643 |
+
+Final recorded training loss:
+
+```text
+4.8154e-7
+```
+
+The adapter was saved under:
+
+```text
+outputs/dpo_adapter/
+```
+
+### Interpreting the metrics
+
+- `rewards/chosen` measures the implicit reward assigned to preferred responses.
+- `rewards/rejected` measures the implicit reward assigned to rejected responses.
+- `rewards/accuracies` measures how often the chosen response scores higher.
+- `rewards/margins` measures the average separation between chosen and rejected rewards.
+
+The perfect reward accuracy indicates that the model separated the supplied preference pairs. It does **not** prove perfect real-world behavior.
+
+---
+
+# Evaluation
+
+The same 10 questions were used for:
+
+1. the base model;
+2. the SFT model;
+3. the DPO-aligned model.
+
+Evaluation criteria:
+
+- correctness;
+- domain accuracy;
+- safety;
+- helpfulness;
+- clarity;
+- professional tone;
+- escalation behavior;
+- hallucination risk.
+
+Detailed outputs are stored in:
+
+```text
+reports/base_model_evaluation.md
+reports/sft_model_comparison.md
+reports/final_evaluation.md
+```
+
+## Honest final observation
+
+Manual review found **mixed performance**.
+
+### Successful behaviors
+
+The fine-tuned model often improved:
+
+- immediate stolen-device escalation;
+- collection of useful VPN ticket details;
+- refusal to accept passwords and one-time codes;
+- use of approved software-request processes;
+- professional helpdesk wording.
+
+### Weak behaviors
+
+The model sometimes:
+
+- selected a memorized answer from the wrong IT category;
+- repeated nearly identical SFT and DPO answers;
+- omitted the immediate password-change and incident-reporting actions after phishing;
+- treated a company-wide VPN outage as an individual troubleshooting problem;
+- gave unrelated malware advice for a permissions request;
+- suggested unsafe or unrealistic actions such as local administrator access or rebooting a domain controller.
+
+### Why this happened
+
+The primary limitation was dataset quality rather than pipeline execution:
+
+- multiple instructions reused the same target response;
+- the SFT dataset had limited answer diversity;
+- several DPO rejected answers were too easy to distinguish;
+- DPO chosen answers frequently repeated the existing SFT targets;
+- few examples covered identity questions, malicious requests, out-of-domain prompts, and nuanced incident-priority decisions;
+- the 1.5B model has limited capacity;
+- greedy decoding makes memorized templates more visible.
+
+The key lesson is:
+
+> Low loss and perfect preference accuracy measure performance on the supplied training objective. Human evaluation is still necessary to determine whether responses are actually correct, relevant, and safe.
+
+---
+
+# Inference
+
+The final script loads the 4-bit base model and the saved DPO LoRA adapter.
+
+## Single question
+
+```bash
+python src/inference.py \
+  "My company laptop was stolen. Can I report it tomorrow?"
+```
+
+## Interactive mode
 
 ```bash
 python src/inference.py
 ```
 
-## Evaluation approach
+Example:
 
-All three stages use the same ten questions. The notebooks preserve raw outputs and build Markdown tables. Human review is still required for:
+```text
+Loading NovaDesk model...
+Ready. Type 'exit' to stop.
 
-- correctness;
-- NovaDesk policy accuracy;
-- clarity and helpfulness;
-- credential and data safety;
-- escalation behavior;
-- professional tone;
-- hallucination reduction.
+You: Can I send you my password?
 
-## Expected behavior changes
+Assistant:
+Do not share passwords, one-time codes, or private keys...
+```
 
-These are hypotheses to verify, not claimed measurements:
+The model is loaded once in interactive mode, making repeated questions faster.
 
-- Base model: generally useful but may be generic or omit NovaDesk-specific rules.
-- SFT model: should cite the 15-minute lockout wait, approved portals, required ticket details, and explicit escalation conditions.
-- DPO model: should more consistently reject password/code sharing, unsupported restoration promises, unsafe malware cleanup, and delayed lost-device reporting.
+> A CUDA-capable environment is recommended because the model is loaded in 4-bit mode.
 
-## Training screenshots or logs
+---
 
-Before final submission, add screenshots showing:
+# Running the project in Google Colab
 
-1. GPU runtime and installed versions
-2. dataset counts
-3. trainable parameter count
-4. Stage 1 loss
-5. SFT loss/evaluation metrics
-6. DPO chosen/rejected reward or margin metrics
-7. one before-vs-after answer
+Run the notebooks in this exact order:
 
-Place images in `reports/images/` and embed them here.
+```text
+1. notebooks/non_instruction_finetuning.ipynb
+2. notebooks/instruction_finetuning.ipynb
+3. notebooks/dpo_alignment.ipynb
+```
 
-## Challenges
+Use a GPU runtime:
 
-- Small datasets can overfit; validation loss and held-out questions must be reviewed.
-- Public support-ticket data can be generic, noisy, duplicated, or inconsistent with a company policy.
-- DPO pairs must differ meaningfully; trivial wording changes teach little.
-- A 1.5B model may memorize policy phrases but still make mistakes outside the curated topics.
-- Colab sessions are temporary, so adapters and reports must be saved promptly.
+```text
+Runtime → Change runtime type → T4 GPU
+```
 
-## Future improvements
+The project was stored in Google Drive so adapters and generated reports persisted between Colab sessions.
 
-- Expand and diversify paraphrases while keeping a policy source of truth.
-- Add retrieval-augmented generation over current IT documentation.
-- Add automated safety checks for secrets, unsafe commands, and false outage promises.
-- Evaluate on unseen adversarial prompts and multi-turn conversations.
-- Track exact-match policy facts and human preference scores.
-- Deploy a merged or GGUF model only after license, privacy, and security review.
+Example setup:
 
-## License
+```python
+from google.colab import drive
+drive.mount("/content/drive")
 
-Code is provided under the MIT License. The fictional NovaDesk training data is included for educational use. The optional public sample retains its original CC BY-NC 4.0 attribution and restrictions; see `data/DATASET_CARD.md`.
+PROJECT = "/content/drive/MyDrive/domain-ai-assistant-finetuning"
+
+!rm -rf /content/domain-ai-assistant-finetuning
+!ln -s "{PROJECT}" /content/domain-ai-assistant-finetuning
+
+%cd /content/domain-ai-assistant-finetuning
+```
+
+Unsloth must be imported before TRL, Transformers, and PEFT:
+
+```python
+from unsloth import FastLanguageModel, is_bfloat16_supported
+from trl import SFTTrainer, SFTConfig
+```
+
+For Qwen2.5, the project explicitly aligns the tokenizer with:
+
+```python
+tokenizer.eos_token = "<|im_end|>"
+tokenizer.pad_token = "<|endoftext|>"
+```
+
+---
+
+# Reports
+
+The notebooks automatically generated the model-answer columns in the Markdown reports.
+
+The following fields still require human judgment before final submission:
+
+- `Problem observed`
+- `Which is better?`
+- `Best answer`
+- `Reason`
+
+The evaluator should not automatically select the DPO response. The answer should be chosen based on the actual content.
+
+---
+
+# Challenges faced
+
+1. **Qwen EOS-token mismatch**  
+   TRL initially received the invalid placeholder `<EOS_TOKEN>`. This was resolved by importing Unsloth before TRL and explicitly setting Qwen’s `<|im_end|>` EOS token.
+
+2. **Colab persistence**  
+   Google Drive was used because Colab’s local filesystem is temporary.
+
+3. **Verbose inference output**  
+   The inference script was updated to suppress non-fatal Transformers and Unsloth startup messages.
+
+4. **Dataset repetition**  
+   Repeated target answers caused the model to behave like a template retriever.
+
+5. **Misleadingly strong DPO metrics**  
+   Reward accuracy reached 1.0 because many rejected answers were very weak. Human evaluation showed that this did not translate into universal response improvement.
+
+6. **Small-model limitations**  
+   A 1.5B model is practical for Colab but has limited robustness on unseen or ambiguous prompts.
+
+---
+
+# Future improvements
+
+- Create unique, question-specific SFT answers.
+- Increase the SFT dataset to at least 250–500 diverse examples.
+- Build DPO rejected answers from real SFT failures rather than only obviously bad answers.
+- Add hard preference pairs where both answers sound plausible.
+- Add identity, refusal, malicious-request, access-control, MFA-recovery, and major-incident examples.
+- Add unseen and adversarial evaluation prompts.
+- Use a separate frozen SFT reference adapter during DPO.
+- Evaluate stochastic and deterministic decoding separately.
+- Add retrieval-augmented generation over current IT policy documents.
+- Test a larger 3B–7B model when more GPU memory is available.
+- Add multi-turn conversation memory.
+- Introduce automatic policy and secret-leak checks.
+
+---
+
+# GitHub repository hygiene
+
+Large generated files are excluded through `.gitignore`:
+
+```gitignore
+outputs/
+*.safetensors
+checkpoint-*/
+huggingface_tokenizers_cache/
+unsloth_compiled_cache/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+```
+
+The repository should include:
+
+- datasets;
+- executed notebooks;
+- reports;
+- small JSON artifacts;
+- source code;
+- screenshots;
+- README and license.
+
+It should not include:
+
+- model checkpoints;
+- LoRA `.safetensors` weights;
+- Hugging Face caches;
+- compiled Unsloth caches;
+- Python cache folders.
+
+---
+
+# Training evidence
+
+Add your screenshots under:
+
+```text
+reports/images/
+```
+
+Recommended filenames:
+
+```text
+01_dataset_validation.png
+02_non_instruction_training.png
+03_sft_training.png
+04_dpo_training.png
+05_model_comparison.png
+06_final_inference.png
+```
+
+Example Markdown:
+
+```markdown
+![SFT training](reports/images/03_sft_training.png)
+![DPO training](reports/images/04_dpo_training.png)
+![Final inference](reports/images/06_final_inference.png)
+```
+
+---
+
+# Key learning outcomes
+
+This project demonstrates:
+
+- raw-text domain adaptation;
+- 4-bit QLoRA on limited hardware;
+- supervised prompt-completion training;
+- preference data preparation;
+- DPO alignment;
+- adapter saving and loading;
+- before-versus-after evaluation;
+- interactive inference;
+- the importance of dataset diversity and human evaluation.
+
+A concise interview explanation:
+
+> I built a domain-specific IT helpdesk assistant using Unsloth and Qwen2.5-1.5B. I first performed non-instruction domain adaptation on raw policy text, continued with supervised instruction fine-tuning on question-answer pairs, and then applied DPO using chosen and rejected responses. I evaluated the base, SFT, and DPO models on the same held-out questions. The pipeline completed successfully, but human evaluation revealed that repetitive training data caused topic-mismatched responses, demonstrating why dataset quality matters more than training loss alone.
+
+---
+
+# References
+
+- [Qwen2.5-1.5B-Instruct model card](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct)
+- [Unsloth Qwen2.5 1.5B 4-bit checkpoint](https://huggingface.co/unsloth/Qwen2.5-1.5B-Instruct-bnb-4bit)
+- [Hugging Face TRL DPO Trainer](https://huggingface.co/docs/trl/en/dpo_trainer)
+- [Unsloth preference optimization guide](https://unsloth.ai/docs/get-started/reinforcement-learning-rl-guide/preference-dpo-orpo-and-kto)
+- [Direct Preference Optimization paper](https://arxiv.org/abs/2305.18290)
+- [Optional public support-ticket dataset](https://huggingface.co/datasets/Tobi-Bueck/customer-support-tickets)
+
+---
+
+# License
+
+The project code is released under the **MIT License**.
+
+The NovaDesk data is fictional and included for educational use. Any optional public dataset content remains subject to its original dataset license and attribution requirements.
