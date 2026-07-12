@@ -1,0 +1,10 @@
+# GPU training requirements; notebooks install latest compatible versions in Colab.
+unsloth
+trl
+transformers
+datasets
+peft
+accelerate
+bitsandbytes
+sentencepiece
+pandas
